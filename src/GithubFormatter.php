@@ -11,6 +11,8 @@ use NunoMaduro\PhpInsights\Domain\Details;
 use NunoMaduro\PhpInsights\Domain\DetailsComparator;
 use NunoMaduro\PhpInsights\Domain\Insights\InsightCollection;
 use RafaelYon\PhpInsightsReviewer\Clients\GithubClient;
+use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 
 final class GithubFormatter implements Formatter
 {
@@ -21,10 +23,13 @@ final class GithubFormatter implements Formatter
     private string $commitId;
     private string $pathPrefixToIgnore;
 
+    private OutputInterface $output;
     private GithubClient $client;
 
-    public function __construct()
+    public function __construct(OutputInterface $output)
     {
+        $this->output = $output;
+
         $this->repository = $this->getEnvOrFail('GITHUB_REPOSITORY');
         $this->prNumber = (int) $this->getEnvOrFail('GITHUB_PR_NUMBER');
         $this->commitId = $this->getEnvOrFail('GITHUB_COMMIT_ID');
@@ -80,10 +85,14 @@ final class GithubFormatter implements Formatter
                         $detail->getFile()
                     );
 
-                    if ($detail->hasDiff()) {
-                        $this->writeDetailDiff($category, $insight->getTitle(), $fileName, $detail);
-                    } elseif ($detail->hasLine()) {
-                        $this->writeDetail($category, $insight->getTitle(), $fileName, $detail);
+                    try {
+                        if ($detail->hasDiff()) {
+                            $this->writeDetailDiff($category, $insight->getTitle(), $fileName, $detail);
+                        } elseif ($detail->hasLine()) {
+                            $this->writeDetail($category, $insight->getTitle(), $fileName, $detail);
+                        }
+                    } catch (Throwable $exception) {
+                        $this->output->writeln("::error ::{$exception->getMessage()}");
                     }
                 }
             }
