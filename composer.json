@@ -14,5 +14,10 @@
             "email": "rafaelyon.1999@gmail.com"
         }
     ],
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "nunomaduro/phpinsights": "^2.4",
+        "symfony/http-client": "^6.1"
+    }
 }
