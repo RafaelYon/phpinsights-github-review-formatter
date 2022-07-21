@@ -62,6 +62,7 @@ return [
 
     'remove' => [
         \PHP_CodeSniffer\Standards\PSR2\Sniffs\Files\EndFileNewlineSniff::class,
+        \PhpCsFixer\Fixer\Whitespace\SingleBlankLineAtEofFixer::class,
     ],
 
     'config' => [
