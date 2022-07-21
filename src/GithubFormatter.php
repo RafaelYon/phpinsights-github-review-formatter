@@ -105,9 +105,9 @@ final class GithubFormatter implements Formatter
                     [
                         '### PHP Insights',
                         "#### [{$category}] {$title}",
-                        "```diff",
+                        '```diff',
                         $diff['diff'],
-                        "```",
+                        '```',
                     ]
                 ),
                 $fileName,
@@ -132,7 +132,7 @@ final class GithubFormatter implements Formatter
         if (count($matches) < 1) {
             throw new Exception("The diff does not have the expected line indication: \"{$diff}\"");
         }
-        
+
         $parts = [];
 
         $lastIndex = 0;
@@ -147,7 +147,7 @@ final class GithubFormatter implements Formatter
 
             $parts[] = [
                 // Write the previous diff section
-                'lineCursor' => $matches[$i-1][1],
+                'lineCursor' => $matches[$i - 1][1],
                 // The current line indicator position is the threshold for the previous diff
                 'diff' => mb_substr($diff, $lastIndex, $currentIndex),
             ];
