@@ -6,7 +6,6 @@ namespace RafaelYon\PhpInsightsReviewer;
 
 use Exception;
 use NunoMaduro\PhpInsights\Application\Console\Contracts\Formatter;
-use NunoMaduro\PhpInsights\Application\Console\Formatters\PathShortener;
 use NunoMaduro\PhpInsights\Domain\Contracts\HasDetails;
 use NunoMaduro\PhpInsights\Domain\Details;
 use NunoMaduro\PhpInsights\Domain\DetailsComparator;
@@ -20,6 +19,7 @@ final class GithubFormatter implements Formatter
     private string $repository;
     private int $prNumber;
     private string $commitId;
+    private string $pathPrefixToIgnore;
 
     private GithubClient $client;
 
@@ -28,6 +28,7 @@ final class GithubFormatter implements Formatter
         $this->repository = $this->getEnvOrFail('GITHUB_REPOSITORY');
         $this->prNumber = (int) $this->getEnvOrFail('GITHUB_PR_NUMBER');
         $this->commitId = $this->getEnvOrFail('GITHUB_COMMIT_ID');
+        $this->pathPrefixToIgnore = $this->getEnvOrFail('PATH_PREFIX_TO_IGNORE');
 
         $this->client = new GithubClient(
             $this->getEnvOrFail('GITHUB_API_URL'),
@@ -73,9 +74,10 @@ final class GithubFormatter implements Formatter
                         continue;
                     }
 
-                    $fileName = PathShortener::fileName(
-                        $detail,
-                        $insightCollection->getCollector()->getCommonPath()
+                    $fileName = str_replace(
+                        $this->pathPrefixToIgnore,
+                        '',
+                        $detail->getFile()
                     );
 
                     if ($detail->hasDiff()) {
@@ -98,11 +100,16 @@ final class GithubFormatter implements Formatter
                 $this->repository,
                 $this->prNumber,
                 $this->commitId,
-                "### PHP Insights
-                #### [{$category}] {$title}
-                ```diff
-                {$diff['diff']}
-                ```",
+                implode(
+                    "\n",
+                    [
+                        '### PHP Insights',
+                        "#### [{$category}] {$title}",
+                        "```diff",
+                        $diff['diff'],
+                        "```",
+                    ]
+                ),
                 $fileName,
                 $diff['line'],
                 GithubClient::REVIEW_COMMENT_RIGHT_SIDE,
