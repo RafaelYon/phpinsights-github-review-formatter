@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RafaelYon\PhpInsightsReviewer\Clients;
 
+use Exception;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -60,7 +61,7 @@ final class GithubClient
             $body['start_side'] = $startSide;
         }
 
-        $this->client->request(
+        $response = $this->client->request(
             'POST',
             "repos/{$fullRepositoryName}/pulls/{$prNumber}/comments",
             [
@@ -71,5 +72,11 @@ final class GithubClient
                 'json'      => $body,
             ]
         );
+
+        $statusCode = $response->getStatusCode();
+        if ($statusCode !== 201) {
+            $content = $response->getContent(false);
+            throw new Exception("Can't create pull request comment. Github return [{$statusCode}]: \"{$content}\"");
+        }
     }
 }
