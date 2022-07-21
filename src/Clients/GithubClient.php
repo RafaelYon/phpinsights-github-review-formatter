@@ -22,8 +22,8 @@ final class GithubClient
         $this->client = HttpClient::createForBaseUri(
             $apiUrl,
             [
-                'auth_bearer'   => $apiBearerToken,
-                'headers'       => [
+                'auth_bearer' => $apiBearerToken,
+                'headers' => [
                     'User-Agent' => 'PhpInsightsReviewer/1.0 (symfony/http-client)',
                 ],
             ]
@@ -32,7 +32,7 @@ final class GithubClient
 
     /**
      * Create a review comment for pull request.
-     * 
+     *
      * @return string The comment url
      * @see https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request
      */
@@ -49,11 +49,11 @@ final class GithubClient
         int $timeout = 10
     ): void {
         $body = [
-            'body'      => $comment,
+            'body' => $comment,
             'commit_id' => $commitId,
-            'path'      => $filePath,
-            'line'      => $line,
-            'side'      => $side,
+            'path' => $filePath,
+            'line' => $line,
+            'side' => $side,
         ];
 
         if ($startLine !== null && $startSide !== null) {
@@ -65,11 +65,11 @@ final class GithubClient
             'POST',
             "repos/{$fullRepositoryName}/pulls/{$prNumber}/comments",
             [
-                'timeout'   => $timeout,
-                'headers'   => [
+                'timeout' => $timeout,
+                'headers' => [
                     'Accept' => 'application/vnd.github+json',
                 ],
-                'json'      => $body,
+                'json' => $body,
             ]
         );
 
