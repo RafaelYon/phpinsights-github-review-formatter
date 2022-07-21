@@ -38,15 +38,15 @@ final class GithubClient
     public function createReviewCommentForPR(
         string $fullRepositoryName,
         int $prNumber,
-        string $comment,
         string $commitId,
+        string $comment,
         string $filePath,
         int $line,
         string $side,
         ?int $startLine = null,
         ?string $startSide = null,
         int $timeout = 10
-    ): string {
+    ): void {
         $body = [
             'body'      => $comment,
             'commit_id' => $commitId,
@@ -60,7 +60,7 @@ final class GithubClient
             $body['start_side'] = $startSide;
         }
 
-        $response = $this->client->request(
+        $this->client->request(
             'POST',
             "repos/{$fullRepositoryName}/pulls/{$prNumber}/comments",
             [
@@ -71,7 +71,5 @@ final class GithubClient
                 'json'      => $body,
             ]
         );
-
-        return $response->toArray()['url'];
     }
 }
