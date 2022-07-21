@@ -82,10 +82,36 @@ final class GithubFormatter implements Formatter
 
                     if ($detail->hasDiff()) {
                         $this->writeDetailDiff($category, $insight->getTitle(), $fileName, $detail);
+                    } elseif ($detail->hasLine()) {
+                        $this->writeDetail($category, $insight->getTitle(), $fileName, $detail);
                     }
                 }
             }
         }
+    }
+
+    private function writeDetail(
+        string $category,
+        string $title,
+        string $fileName,
+        Details $detail
+    ): void {
+        $this->client->createReviewCommentForPR(
+            $this->repository,
+            $this->prNumber,
+            $this->commitId,
+            implode(
+                "\n",
+                [
+                    '### PHP Insights',
+                    "#### [{$category}] {$title}",
+                    $detail->getMessage(),
+                ]
+            ),
+            $fileName,
+            $detail->getLine(),
+            GithubClient::REVIEW_COMMENT_RIGHT_SIDE
+        );
     }
 
     private function writeDetailDiff(
