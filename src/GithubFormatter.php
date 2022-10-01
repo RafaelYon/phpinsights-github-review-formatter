@@ -11,8 +11,8 @@ use NunoMaduro\PhpInsights\Domain\Details;
 use NunoMaduro\PhpInsights\Domain\DetailsComparator;
 use NunoMaduro\PhpInsights\Domain\Insights\InsightCollection;
 use NunoMaduro\PhpInsights\Domain\Results;
-use RafaelYon\PhpInsightsReviewer\Clients\FileComment;
-use RafaelYon\PhpInsightsReviewer\Clients\GithubClient;
+use RafaelYon\PhpInsightsReviewer\Clients\GitHub\Client;
+use RafaelYon\PhpInsightsReviewer\Clients\GitHub\FileComment;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
@@ -26,7 +26,7 @@ final class GithubFormatter implements Formatter
     private string $pathPrefixToIgnore;
 
     private OutputInterface $output;
-    private GithubClient $client;
+    private Client $client;
 
     /**
      * @var array<int, FileComment>
@@ -42,7 +42,7 @@ final class GithubFormatter implements Formatter
         $this->commitId = $this->getEnvOrFail('GITHUB_COMMIT_ID');
         $this->pathPrefixToIgnore = $this->getEnvOrFail('PATH_PREFIX_TO_IGNORE');
 
-        $this->client = new GithubClient(
+        $this->client = new Client(
             $this->getEnvOrFail('GITHUB_API_URL'),
             $this->getEnvOrFail('GITHUB_TOKEN')
         );
@@ -65,7 +65,7 @@ final class GithubFormatter implements Formatter
             $this->repository,
             $this->prNumber,
             $this->commitId,
-            GithubClient::REVIEW_EVENT_ACTION_COMMENT,
+            Client::REVIEW_EVENT_ACTION_COMMENT,
             $this->formatComment(
                 $this->formatTableHeader(
                     'Quality',

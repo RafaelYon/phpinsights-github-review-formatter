@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace RafaelYon\PhpInsightsReviewer\Clients;
+namespace RafaelYon\PhpInsightsReviewer\Clients\GitHub;
 
 final class FileComment
 {

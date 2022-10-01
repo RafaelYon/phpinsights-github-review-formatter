@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace RafaelYon\PhpInsightsReviewer\Clients;
+namespace RafaelYon\PhpInsightsReviewer\Clients\GitHub;
 
 use Exception;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
-final class GithubClient
+final class Client
 {
     public const REVIEW_COMMENT_LEFT_SIDE = 'LEFT';
     public const REVIEW_COMMENT_RIGHT_SIDE = 'RIGHT';
