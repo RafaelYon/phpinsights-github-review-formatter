@@ -59,7 +59,7 @@ final class GithubFormatter implements Formatter
             $this->commitId,
             GithubClient::REVIEW_EVENT_ACTION_COMMENT,
             $this->formatComment(
-                $this->formatTableRow(
+                $this->formatTableHeader(
                     'Quality',
                     'Complexity',
                     'Architecture',
@@ -232,9 +232,22 @@ final class GithubFormatter implements Formatter
         return implode("\n", $lines);
     }
 
-    private function formatTableRow(string ...$colums): string
+    private function formatTableRow(string ...$columns): string
     {
-        return '| ' . implode(' | ', $colums) . ' |';
+        return '| ' . implode(' | ', $columns) . ' |';
+    }
+
+    private function formatTableHeader(string ...$columns): string
+    {
+        $headerDividerLine = [];
+        foreach ($columns as $index => $column) {
+            $headerDividerLine[$index] = str_repeat('-', mb_strlen($column));
+        }
+
+        return $this->formatLines(
+            $this->formatTableRow(...$columns),
+            $this->formatTableRow(...$headerDividerLine)
+        );
     }
 
     private function formatPercent(float $percentage): string
@@ -251,12 +264,14 @@ final class GithubFormatter implements Formatter
             $color = 'orange';
         }
 
-        return '"https://img.shields.io/static/v1?' . http_build_query([
-            'label' => '',
-            'style' => 'for-the-badge',
-            'message' => $this->formatPercent($percentage),
-            'color' => $color,
-        ]);
+        return '![](https://img.shields.io/static/v1?'
+            . http_build_query([
+                'label' => '',
+                'style' => 'for-the-badge',
+                'message' => $this->formatPercent($percentage),
+                'color' => $color,
+            ])
+            . ')';
     }
 
     private function formatComment(
