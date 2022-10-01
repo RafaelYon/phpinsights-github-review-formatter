@@ -17,7 +17,7 @@ use Throwable;
 
 final class GithubFormatter implements Formatter
 {
-    private const DIFF_LINES_REGEX = '/\@{2} \-(\d+,?\d+) \+(\d+,?\d+) \@{2}/m';
+    private const DIFF_LINES_REGEX = '/\@{2} \-(\d+,?\d+) \+(\d+,?\d+) \@{2}/';
 
     private string $repository;
     private int $prNumber;
@@ -151,80 +151,65 @@ final class GithubFormatter implements Formatter
         string $fileName,
         Details $detail
     ): void {
-        $diffs = $this->extractDiffLines($detail->getDiff());
-        foreach ($diffs as $diff) {
-            $this->client->createPullRequestReviewComment(
-                $this->repository,
-                $this->prNumber,
-                $this->commitId,
-                $this->formatComment(
-                    $this->createCategoryTitle($category, $title),
-                    '```diff',
-                    $diff['diff'],
-                    '```'
-                ),
-                $fileName,
-                $diff['line'],
-                GithubClient::REVIEW_COMMENT_RIGHT_SIDE,
-                $diff['startLine'],
-                GithubClient::REVIEW_COMMENT_RIGHT_SIDE
-            );
-        }
+        list($startLine, $line) = $this->extractDiffLinesPosition(
+            $detail->getDiff()
+        );
+
+        $this->client->createPullRequestReviewComment(
+            $this->repository,
+            $this->prNumber,
+            $this->commitId,
+            $this->formatComment(
+                $this->createCategoryTitle($category, $title),
+                '```diff',
+                $detail->getDiff(),
+                '```'
+            ),
+            $fileName,
+            $line,
+            GithubClient::REVIEW_COMMENT_RIGHT_SIDE,
+            $startLine,
+            GithubClient::REVIEW_COMMENT_RIGHT_SIDE
+        );
     }
 
-    private function extractDiffLines(string $diff): array
+    /**
+     * @return array<int, int>
+     */
+    private function extractDiffLinesPosition(string $diff): array
     {
         $matches = [];
 
         // One Details can mention several parts
-        if (! preg_match_all(self::DIFF_LINES_REGEX, $diff, $matches, PREG_SET_ORDER)) {
+        if (! preg_match(self::DIFF_LINES_REGEX, $diff, $matches)) {
             // @todo: Throw custom exection
             throw new Exception("Can't retrive line range from diff: \"{$diff}\"");
         }
 
-        if (count($matches) < 1) {
+        if (count($matches) !== 3) {
             throw new Exception("The diff does not have the expected line indication: \"{$diff}\"");
         }
 
-        $parts = [];
+        $startLine = $this->extractLineFromDiffPosition($matches[1]);
+        $endLine = $this->extractLineFromDiffPosition($matches[2]);
 
-        $lastIndex = 0;
-        $totalMatches = count($matches);
+        if ($endLine < $startLine) {
+            $newEnd = $startLine;
 
-        for ($i = 1; $i <= $totalMatches; $i++) {
-            if ($i < $totalMatches) {
-                $currentIndex = mb_strpos($diff, $matches[$i][0], $lastIndex);
-            } else {
-                $currentIndex = mb_strlen($diff);
-            }
-
-            $parts[] = [
-                // Write the previous diff section
-                'lineCursor' => $matches[$i - 1][1],
-                // The current line indicator position is the threshold for the previous diff
-                'diff' => mb_substr($diff, $lastIndex, $currentIndex),
-            ];
-
-            $lastIndex = $currentIndex;
+            $startLine = $endLine;
+            $endLine = $newEnd;
         }
 
-        // Extract line range from every diff
-        foreach ($parts as &$part) {
-            $lineParts = explode(',', $part['lineCursor']);
-            $lineParts[0] = (int) $lineParts[0];
+        return [$startLine, $endLine];
+    }
 
-            // If there is a second value we have a diff for several lines
-            if (count($lineParts) === 2) {
-                $lineParts[1] = $lineParts[0] + ((int) $lineParts[1]);
-            } else {
-                $lineParts[1] = $lineParts[0];
-            }
-
-            $part['startLine'] = $lineParts[0];
-            $part['line'] = $lineParts[1];
-        }
-
-        return $parts;
+    /**
+     * @param string $diffPosition Ex.: "41,3"
+     */
+    private function extractLineFromDiffPosition(string $diffPosition): int
+    {
+        $lineParts = explode(',', $diffPosition);
+        return (int) $lineParts[0];
     }
 
     private function formatLines(string ...$lines): string
