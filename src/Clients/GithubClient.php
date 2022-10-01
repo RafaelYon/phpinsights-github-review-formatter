@@ -11,14 +11,14 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class GithubClient
 {
-    private const USER_AGENT = 'PhpInsightsReviewer/1.0 (symfony/http-client)';
-
     public const REVIEW_COMMENT_LEFT_SIDE = 'LEFT';
     public const REVIEW_COMMENT_RIGHT_SIDE = 'RIGHT';
 
     public const REVIEW_EVENT_ACTION_APPROVE = 'APPROVE';
     public const REVIEW_EVENT_ACTION_COMMENT = 'COMMENT';
     public const REVIEW_EVENT_ACTION_REQUEST_CHANGES = 'REQUEST_CHANGES';
+
+    private const USER_AGENT = 'PhpInsightsReviewer/1.0 (symfony/http-client)';
 
     private HttpClientInterface $client;
 
@@ -39,9 +39,9 @@ final class GithubClient
 
     /**
      * Create a review comment for pull request (PR).
-     * 
+     *
      * @see https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request
-     * 
+     *
      * @throws Exception
      */
     public function createPullRequestReviewComment(
@@ -82,9 +82,9 @@ final class GithubClient
 
     /**
      * Create a review for pull request (PR).
-     * 
+     *
      * @see https://docs.github.com/en/rest/pulls/reviews#create-a-review-for-a-pull-request
-     * 
+     *
      * @throws Exception
      */
     public function createPullRequestReview(
@@ -102,8 +102,8 @@ final class GithubClient
             [
                 'json' => [
                     'commit_id' => $commitId,
-                    'event'     => $event,
-                    'body'      => $body,
+                    'event' => $event,
+                    'body' => $body,
                 ],
             ]
         );
@@ -120,7 +120,7 @@ final class GithubClient
         int $expectedStatusCode = 200
     ): ResponseInterface {
         $options['timeout'] = $timeout;
-        
+
         if (! isset($options['headers'])) {
             $options['headers'] = [];
         }

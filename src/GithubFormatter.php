@@ -151,7 +151,7 @@ final class GithubFormatter implements Formatter
         string $fileName,
         Details $detail
     ): void {
-        list($startLine, $line) = $this->extractDiffLinesPosition(
+        [$startLine, $line] = $this->extractDiffLinesPosition(
             $detail->getDiff()
         );
 
