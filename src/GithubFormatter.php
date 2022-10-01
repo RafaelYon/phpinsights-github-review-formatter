@@ -58,25 +58,19 @@ final class GithubFormatter implements Formatter
             $this->prNumber,
             $this->commitId,
             GithubClient::REVIEW_EVENT_ACTION_COMMENT,
-            $this->formatLines(
-                $this->formatTableRow('Metric', '%'),
-                $this->formatTableRow('------', '-'),
+            $this->formatComment(
                 $this->formatTableRow(
                     'Quality',
-                    $this->formatPercent($results->getCodeQuality())
-                ),
-                $this->formatTableRow(
                     'Complexity',
-                    $this->formatPercent($results->getComplexity())
-                ),
-                $this->formatTableRow(
                     'Architecture',
-                    $this->formatPercent($results->getStructure())
+                    'Style'
                 ),
                 $this->formatTableRow(
-                    'Style',
-                    $this->formatPercent($results->getStyle())
-                ),
+                    $this->formatMetricPercentage($results->getCodeQuality()),
+                    $this->formatMetricPercentage($results->getComplexity()),
+                    $this->formatMetricPercentage($results->getStructure()),
+                    $this->formatMetricPercentage($results->getStyle())
+                )
             )
         );
     }
@@ -141,13 +135,9 @@ final class GithubFormatter implements Formatter
             $this->repository,
             $this->prNumber,
             $this->commitId,
-            implode(
-                "\n",
-                [
-                    '### PHP Insights',
-                    "#### [{$category}] {$title}",
-                    $detail->getMessage(),
-                ]
+            $this->formatComment(
+                $this->createCategoryTitle($category, $title),
+                $detail->getMessage()
             ),
             $fileName,
             $detail->getLine(),
@@ -167,15 +157,11 @@ final class GithubFormatter implements Formatter
                 $this->repository,
                 $this->prNumber,
                 $this->commitId,
-                implode(
-                    "\n",
-                    [
-                        '### PHP Insights',
-                        "#### [{$category}] {$title}",
-                        '```diff',
-                        $diff['diff'],
-                        '```',
-                    ]
+                $this->formatComment(
+                    $this->createCategoryTitle($category, $title),
+                    '```diff',
+                    $diff['diff'],
+                    '```'
                 ),
                 $fileName,
                 $diff['line'],
@@ -254,6 +240,38 @@ final class GithubFormatter implements Formatter
     private function formatPercent(float $percentage): string
     {
         return number_format($percentage, 2, '.', '') . '%';
+    }
+
+    private function formatMetricPercentage(float $percentage): string
+    {
+        $color = 'red';
+        if ($percentage >= 80) {
+            $color = 'green';
+        } elseif ($percentage >= 50) {
+            $color = 'orange';
+        }
+
+        return sprintf(
+            "https://img.shields.io/static/v1?label=&style=for-the-badge&message=%s%&color=%s",
+            $this->formatPercent($percentage),
+            $color
+        );
+    }
+
+    private function formatComment(
+        string ...$lines
+    ): string {
+        return $this->formatLines(
+            '### PHP Insights',
+            ...$lines
+        );
+    }
+
+    private function createCategoryTitle(
+        string $category,
+        string $title
+    ): string {
+        return "#### [{$category}] {$title}";
     }
 
     private function getEnvOrFail(string $envName): string
