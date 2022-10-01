@@ -47,34 +47,15 @@ final class GithubClient
     public function createPullRequestReviewComment(
         string $fullRepositoryName,
         int $pullRequestNumber,
-        string $commitId,
-        string $comment,
-        string $filePath,
-        int $line,
-        string $side,
-        ?int $startLine = null,
-        ?string $startSide = null,
+        FileComment $comment,
         int $timeout = 10
     ): void {
-        $body = [
-            'body' => $comment,
-            'commit_id' => $commitId,
-            'path' => $filePath,
-            'line' => $line,
-            'side' => $side,
-        ];
-
-        if ($startLine !== null && $startSide !== null) {
-            $body['start_line'] = $startLine;
-            $body['start_side'] = $startSide;
-        }
-
         $this->request(
             $timeout,
             'POST',
             "repos/{$fullRepositoryName}/pulls/{$pullRequestNumber}/comments",
             [
-                'json' => $body,
+                'json' => $comment->toArray(),
             ],
             201
         );
@@ -84,6 +65,8 @@ final class GithubClient
      * Create a review for pull request (PR).
      *
      * @see https://docs.github.com/en/rest/pulls/reviews#create-a-review-for-a-pull-request
+     * 
+     * @param null|array<int, FileComment> $filesComments
      *
      * @throws Exception
      */
@@ -93,18 +76,30 @@ final class GithubClient
         string $commitId,
         string $event,
         string $body,
+        ?array $filesComments = null,
         int $timeout = 10
     ): void {
+        $requestBody = [
+            'commit_id' => $commitId,
+            'event' => $event,
+            'body' => $body,
+        ];
+
+        if ($filesComments !== null && count($filesComments) > 0) {
+            $requestBody['comments'] = array_map(
+                static function (FileComment $comment): array {
+                    return $comment->toArray();
+                },
+                $filesComments
+            );
+        }
+
         $this->request(
             $timeout,
             'POST',
             "repos/{$fullRepositoryName}/pulls/{$pullRequestNumber}/reviews",
             [
-                'json' => [
-                    'commit_id' => $commitId,
-                    'event' => $event,
-                    'body' => $body,
-                ],
+                'json' => $requestBody,
             ]
         );
     }

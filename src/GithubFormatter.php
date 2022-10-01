@@ -11,6 +11,7 @@ use NunoMaduro\PhpInsights\Domain\Details;
 use NunoMaduro\PhpInsights\Domain\DetailsComparator;
 use NunoMaduro\PhpInsights\Domain\Insights\InsightCollection;
 use NunoMaduro\PhpInsights\Domain\Results;
+use RafaelYon\PhpInsightsReviewer\Clients\FileComment;
 use RafaelYon\PhpInsightsReviewer\Clients\GithubClient;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
@@ -27,6 +28,11 @@ final class GithubFormatter implements Formatter
     private OutputInterface $output;
     private GithubClient $client;
 
+    /**
+     * @var array<int, FileComment>
+     */
+    private array $filesComments;
+
     public function __construct(OutputInterface $output)
     {
         $this->output = $output;
@@ -40,6 +46,8 @@ final class GithubFormatter implements Formatter
             $this->getEnvOrFail('GITHUB_API_URL'),
             $this->getEnvOrFail('GITHUB_TOKEN')
         );
+
+        $this->filesComments = [];
     }
 
     /**
@@ -71,7 +79,8 @@ final class GithubFormatter implements Formatter
                     $this->formatMetricPercentage($results->getStructure()),
                     $this->formatMetricPercentage($results->getStyle())
                 )
-            )
+            ),
+            $this->filesComments
         );
     }
 
@@ -131,17 +140,14 @@ final class GithubFormatter implements Formatter
         string $fileName,
         Details $detail
     ): void {
-        $this->client->createPullRequestReviewComment(
-            $this->repository,
-            $this->prNumber,
-            $this->commitId,
+        $this->filesComments[] = new FileComment(
+            $fileName,
             $this->formatComment(
                 $this->createCategoryTitle($category, $title),
                 $detail->getMessage()
             ),
-            $fileName,
             $detail->getLine(),
-            GithubClient::REVIEW_COMMENT_RIGHT_SIDE
+            FileComment::RIGHT_SIDE
         );
     }
 
@@ -155,21 +161,18 @@ final class GithubFormatter implements Formatter
             $detail->getDiff()
         );
 
-        $this->client->createPullRequestReviewComment(
-            $this->repository,
-            $this->prNumber,
-            $this->commitId,
+        $this->filesComments[] = new FileComment(
+            $fileName,
             $this->formatComment(
                 $this->createCategoryTitle($category, $title),
                 '```diff',
                 $detail->getDiff(),
                 '```'
             ),
-            $fileName,
             $line,
-            GithubClient::REVIEW_COMMENT_RIGHT_SIDE,
+            FileComment::RIGHT_SIDE,
             $startLine,
-            GithubClient::REVIEW_COMMENT_RIGHT_SIDE
+            FileComment::RIGHT_SIDE
         );
     }
 
