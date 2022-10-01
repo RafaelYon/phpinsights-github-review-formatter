@@ -251,11 +251,12 @@ final class GithubFormatter implements Formatter
             $color = 'orange';
         }
 
-        return sprintf(
-            "https://img.shields.io/static/v1?label=&style=for-the-badge&message=%s%&color=%s",
-            $this->formatPercent($percentage),
-            $color
-        );
+        return '"https://img.shields.io/static/v1?' . http_build_query([
+            'label' => '',
+            'style' => 'for-the-badge',
+            'message' => $this->formatPercent($percentage),
+            'color' => $color,
+        ]);
     }
 
     private function formatComment(
