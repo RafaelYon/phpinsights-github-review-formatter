@@ -7,9 +7,12 @@ namespace RafaelYon\PhpInsightsReviewer\Clients;
 use Exception;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class GithubClient
 {
+    private const USER_AGENT = 'PhpInsightsReviewer/1.0 (symfony/http-client)';
+
     public const REVIEW_COMMENT_LEFT_SIDE = 'LEFT';
     public const REVIEW_COMMENT_RIGHT_SIDE = 'RIGHT';
 
@@ -24,7 +27,7 @@ final class GithubClient
             [
                 'auth_bearer' => $apiBearerToken,
                 'headers' => [
-                    'User-Agent' => 'PhpInsightsReviewer/1.0 (symfony/http-client)',
+                    'User-Agent' => self::USER_AGENT,
                 ],
             ]
         );
@@ -34,6 +37,7 @@ final class GithubClient
      * Create a review comment for pull request.
      *
      * @return string The comment url
+     * 
      * @see https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request
      */
     public function createReviewCommentForPR(
@@ -73,10 +77,14 @@ final class GithubClient
             ]
         );
 
-        $statusCode = $response->getStatusCode();
-        if ($statusCode !== 201) {
-            $content = $response->getContent(false);
-            throw new Exception("Can't create pull request comment. Github return [{$statusCode}]: \"{$content}\"");
+        if ($response->getStatusCode() !== 201) {
+            throw new Exception(
+                'Can\'t create pull request comment. GitHub return ['
+                . $response->getStatusCode()
+                . '] "'
+                . $response->getContent(false)
+                . '".'
+            );
         }
     }
 }
