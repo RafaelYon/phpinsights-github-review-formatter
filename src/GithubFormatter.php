@@ -10,6 +10,7 @@ use NunoMaduro\PhpInsights\Domain\Contracts\HasDetails;
 use NunoMaduro\PhpInsights\Domain\Details;
 use NunoMaduro\PhpInsights\Domain\DetailsComparator;
 use NunoMaduro\PhpInsights\Domain\Insights\InsightCollection;
+use NunoMaduro\PhpInsights\Domain\Results;
 use RafaelYon\PhpInsightsReviewer\Clients\GithubClient;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
@@ -44,16 +45,47 @@ final class GithubFormatter implements Formatter
     /**
      * @inheritdoc
      */
-    public function format(InsightCollection $insightCollection, array $metrics): void
+    public function format(InsightCollection $insights, array $metrics): void
     {
-        $this->writeMetricsInsights($insightCollection, $metrics);
+        $this->writeMetricsInsights($insights, $metrics);
+        $this->writeInsightsResult($insights->results());
+    }
+
+    private function writeInsightsResult(Results $results): void
+    {
+        $this->client->createPullRequestReview(
+            $this->repository,
+            $this->prNumber,
+            $this->commitId,
+            GithubClient::REVIEW_EVENT_ACTION_COMMENT,
+            $this->formatLines(
+                $this->formatTableRow('Metric', '%'),
+                $this->formatTableRow('------', '-'),
+                $this->formatTableRow(
+                    'Quality',
+                    $this->formatPercent($results->getCodeQuality())
+                ),
+                $this->formatTableRow(
+                    'Complexity',
+                    $this->formatPercent($results->getComplexity())
+                ),
+                $this->formatTableRow(
+                    'Architecture',
+                    $this->formatPercent($results->getStructure())
+                ),
+                $this->formatTableRow(
+                    'Style',
+                    $this->formatPercent($results->getStyle())
+                ),
+            )
+        );
     }
 
     /**
      * @param array<int, string> $metrics
      */
     private function writeMetricsInsights(
-        InsightCollection $insightCollection,
+        InsightCollection $insights,
         array $metrics
     ): void {
         $detailsComparator = new DetailsComparator();
@@ -62,7 +94,7 @@ final class GithubFormatter implements Formatter
             $category = explode('\\', $metricClass);
             $category = $category[count($category) - 2];
 
-            foreach ($insightCollection->allFrom(new $metricClass()) as $insight) {
+            foreach ($insights->allFrom(new $metricClass()) as $insight) {
                 if (! $insight->hasIssue()) {
                     continue;
                 }
@@ -105,7 +137,7 @@ final class GithubFormatter implements Formatter
         string $fileName,
         Details $detail
     ): void {
-        $this->client->createReviewCommentForPR(
+        $this->client->createPullRequestReviewComment(
             $this->repository,
             $this->prNumber,
             $this->commitId,
@@ -131,7 +163,7 @@ final class GithubFormatter implements Formatter
     ): void {
         $diffs = $this->extractDiffLines($detail->getDiff());
         foreach ($diffs as $diff) {
-            $this->client->createReviewCommentForPR(
+            $this->client->createPullRequestReviewComment(
                 $this->repository,
                 $this->prNumber,
                 $this->commitId,
@@ -207,6 +239,21 @@ final class GithubFormatter implements Formatter
         }
 
         return $parts;
+    }
+
+    private function formatLines(string ...$lines): string
+    {
+        return implode("\n", $lines);
+    }
+
+    private function formatTableRow(string ...$colums): string
+    {
+        return '| ' . implode(' | ', $colums) . ' |';
+    }
+
+    private function formatPercent(float $percentage): string
+    {
+        return number_format($percentage, 2, '.', '') . '%';
     }
 
     private function getEnvOrFail(string $envName): string
