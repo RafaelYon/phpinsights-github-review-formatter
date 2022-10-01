@@ -63,8 +63,8 @@ final class Client
      * Create a review for pull request (PR).
      *
      * @see https://docs.github.com/en/rest/pulls/reviews#create-a-review-for-a-pull-request
-     * 
-     * @param null|array<int, FileComment> $filesComments
+     *
+     * @param array<int, FileComment>|null $filesComments
      *
      * @throws Exception
      */
