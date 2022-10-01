@@ -16,6 +16,10 @@ final class GithubClient
     public const REVIEW_COMMENT_LEFT_SIDE = 'LEFT';
     public const REVIEW_COMMENT_RIGHT_SIDE = 'RIGHT';
 
+    public const REVIEW_EVENT_ACTION_APPROVE = 'APPROVE';
+    public const REVIEW_EVENT_ACTION_COMMENT = 'COMMENT';
+    public const REVIEW_EVENT_ACTION_REQUEST_CHANGES = 'REQUEST_CHANGES';
+
     private HttpClientInterface $client;
 
     public function __construct(
@@ -35,8 +39,6 @@ final class GithubClient
 
     /**
      * Create a review comment for pull request.
-     *
-     * @return string The comment url
      * 
      * @see https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request
      */
@@ -86,5 +88,69 @@ final class GithubClient
                 . '".'
             );
         }
+    }
+
+    /**
+     * Create a review for pull request (PR)
+     * 
+     * @see https://docs.github.com/en/rest/pulls/reviews#create-a-review-for-a-pull-request
+     * 
+     * @throws Exception
+     */
+    public function createPullRequestReview(
+        string $fullRepositoryName,
+        int $pullRequestNumber,
+        string $commitId,
+        string $event,
+        string $body,
+        int $timeout = 10
+    ): void {
+        $this->request(
+            $timeout,
+            'POST',
+            "repos/{$fullRepositoryName}/pulls/{$pullRequestNumber}/reviews",
+            [
+                'json' => [
+                    'commit_id' => $commitId,
+                    'event'     => $event,
+                    'body'      => $body,
+                ],
+            ]
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function request(
+        int $timeout,
+        string $method,
+        string $url,
+        array $options = [],
+        int $expectedStatusCode = 200
+    ): ResponseInterface {
+        $options['timeout'] = $timeout;
+        
+        if (! isset($options['headers'])) {
+            $options['headers'] = [];
+        }
+
+        if (! isset($options['headers']['Accept'])) {
+            $options['headers']['Accept'] = 'application/vnd.github+json';
+        }
+
+        $response = $this->client->request($method, $url, $options);
+
+        if ($response->getStatusCode() !== $expectedStatusCode) {
+            throw new Exception(
+                'Can\'t create pull request comment. GitHub return ['
+                . $response->getStatusCode()
+                . '] "'
+                . $response->getContent(false)
+                . '".'
+            );
+        }
+
+        return $response;
     }
 }
