@@ -54,9 +54,7 @@ final class GithubClient
             $timeout,
             'POST',
             "repos/{$fullRepositoryName}/pulls/{$pullRequestNumber}/comments",
-            [
-                'json' => $comment->toArray(),
-            ],
+            $comment->toArray(),
             201
         );
     }
@@ -98,9 +96,7 @@ final class GithubClient
             $timeout,
             'POST',
             "repos/{$fullRepositoryName}/pulls/{$pullRequestNumber}/reviews",
-            [
-                'json' => $requestBody,
-            ]
+            $requestBody
         );
     }
 
@@ -111,20 +107,20 @@ final class GithubClient
         int $timeout,
         string $method,
         string $url,
-        array $options = [],
+        array $jsonBody,
         int $expectedStatusCode = 200
     ): ResponseInterface {
-        $options['timeout'] = $timeout;
-
-        if (! isset($options['headers'])) {
-            $options['headers'] = [];
-        }
-
-        if (! isset($options['headers']['Accept'])) {
-            $options['headers']['Accept'] = 'application/vnd.github+json';
-        }
-
-        $response = $this->client->request($method, $url, $options);
+        $response = $this->client->request(
+            $method,
+            $url,
+            [
+                'timeout' => $timeout,
+                'headers' => [
+                    'Accept' => 'application/vnd.github+json',
+                ],
+                'json' => $jsonBody,
+            ]
+        );
 
         if ($response->getStatusCode() !== $expectedStatusCode) {
             throw new Exception(
