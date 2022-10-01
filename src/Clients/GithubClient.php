@@ -38,13 +38,15 @@ final class GithubClient
     }
 
     /**
-     * Create a review comment for pull request.
+     * Create a review comment for pull request (PR).
      * 
      * @see https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request
+     * 
+     * @throws Exception
      */
-    public function createReviewCommentForPR(
+    public function createPullRequestReviewComment(
         string $fullRepositoryName,
-        int $prNumber,
+        int $pullRequestNumber,
         string $commitId,
         string $comment,
         string $filePath,
@@ -67,31 +69,19 @@ final class GithubClient
             $body['start_side'] = $startSide;
         }
 
-        $response = $this->client->request(
+        $this->request(
+            $timeout,
             'POST',
-            "repos/{$fullRepositoryName}/pulls/{$prNumber}/comments",
+            "repos/{$fullRepositoryName}/pulls/{$pullRequestNumber}/comments",
             [
-                'timeout' => $timeout,
-                'headers' => [
-                    'Accept' => 'application/vnd.github+json',
-                ],
                 'json' => $body,
-            ]
+            ],
+            201
         );
-
-        if ($response->getStatusCode() !== 201) {
-            throw new Exception(
-                'Can\'t create pull request comment. GitHub return ['
-                . $response->getStatusCode()
-                . '] "'
-                . $response->getContent(false)
-                . '".'
-            );
-        }
     }
 
     /**
-     * Create a review for pull request (PR)
+     * Create a review for pull request (PR).
      * 
      * @see https://docs.github.com/en/rest/pulls/reviews#create-a-review-for-a-pull-request
      * 
