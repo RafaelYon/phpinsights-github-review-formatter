@@ -174,7 +174,7 @@ final class GithubFormatter implements Formatter
     }
 
     /**
-     * @return array<int, int>
+     * @return array<int, ?int>
      */
     private function extractDiffLinesPosition(string $diff): array
     {
@@ -193,7 +193,9 @@ final class GithubFormatter implements Formatter
         $startLine = $this->extractLineFromDiffPosition($matches[1]);
         $endLine = $this->extractLineFromDiffPosition($matches[2]);
 
-        if ($endLine < $startLine) {
+        if ($endLine === $startLine) {
+            $startLine = null;
+        } elseif ($endLine < $startLine) {
             $newEnd = $startLine;
 
             $startLine = $endLine;
